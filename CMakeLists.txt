@@ -41,7 +41,7 @@ target_compile_features(dir_monitor INTERFACE cxx_lambdas cxx_auto_type)
 target_include_directories(dir_monitor INTERFACE
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)
-target_include_directories(dir_monitor INTERFACE ${Boost_INCLUDE_DIRS})
+target_include_directories(dir_monitor SYSTEM INTERFACE ${Boost_INCLUDE_DIRS})
 target_link_libraries(dir_monitor INTERFACE ${Boost_LIBRARIES})
 
 # Finally, install the headers and config
