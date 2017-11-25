@@ -92,14 +92,14 @@ public:
         ::close(kqueue_);
     }
 
-    void add_directory(std::string dirname, int wd)
+    void add_directory(boost::filesystem::path dirname, int wd)
     {
         boost::unique_lock<boost::mutex> lock(dirs_mutex_);
         dirs_.insert(dirname, new unix_handle(wd));
         scan(dirname, entries[dirname]);
     }
 
-    void remove_directory(const std::string &dirname)
+    void remove_directory(const boost::filesystem::path &dirname)
     {
         boost::unique_lock<boost::mutex> lock(dirs_mutex_);
         dirs_.erase(dirname);
@@ -152,7 +152,7 @@ private:
         return fd;
     }
 
-    void scan(std::string const& dir, dir_entry_map& entries)
+    void scan(boost::filesystem::path const& dir, dir_entry_map& entries)
     {
         boost::system::error_code ec;
         boost::filesystem::recursive_directory_iterator it(dir, ec);
@@ -171,7 +171,7 @@ private:
         }
     }
 
-    void compare(std::string const& dir, dir_entry_map& old_entries, dir_entry_map& new_entries)
+    void compare(boost::filesystem::path const& dir, dir_entry_map& old_entries, dir_entry_map& new_entries)
     {
         // @todo filename() loses path relative to dir
         // Need to construct with dir as a root_path() and get all paths relative to that.
@@ -261,13 +261,13 @@ private:
     }
 
     int kqueue_;
-    boost::unordered_map<std::string, dir_entry_map> entries;
+    boost::unordered_map<boost::filesystem::path, dir_entry_map> entries;
     bool run_;
     boost::mutex work_thread_mutex_;
     boost::thread work_thread_;
 
     boost::mutex dirs_mutex_;
-    boost::ptr_unordered_map<std::string, unix_handle> dirs_;
+    boost::ptr_unordered_map<boost::filesystem::path, unix_handle> dirs_;
 
     boost::mutex events_mutex_;
     boost::condition_variable events_cond_;

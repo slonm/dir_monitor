@@ -42,12 +42,12 @@ public:
     {
     }
 
-    void add_directory(std::string dirname, HANDLE handle)
+    void add_directory(boost::filesystem::path dirname, HANDLE handle)
     {
         dirs_.insert(dirname, new windows_handle(handle));
     }
 
-    void remove_directory(const std::string &dirname)
+    void remove_directory(const boost::filesystem::path &dirname)
     {
         dirs_.erase(dirname);
     }
@@ -88,7 +88,7 @@ public:
     }
 
 private:
-    boost::ptr_unordered_map<std::string, windows_handle> dirs_;
+    boost::ptr_unordered_map<boost::filesystem::path, windows_handle> dirs_;
     boost::mutex events_mutex_;
     boost::condition_variable events_cond_;
     bool run_;

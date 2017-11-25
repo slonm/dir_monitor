@@ -70,7 +70,7 @@ public:
         impl.reset();
     }
 
-    void add_directory(implementation_type &impl, const std::string &dirname)
+    void add_directory(implementation_type &impl, const boost::filesystem::path &dirname)
     {
         boost::filesystem::path dir(boost::filesystem::canonical(dirname));
         if (!boost::filesystem::is_directory(dir))
@@ -79,7 +79,7 @@ public:
         impl->add_directory(dir);
     }
 
-    void remove_directory(implementation_type &impl, const std::string &dirname)
+    void remove_directory(implementation_type &impl, const boost::filesystem::path &dirname)
     {
         boost::filesystem::path dir(boost::filesystem::canonical(dirname));
         impl->remove_directory(dir);

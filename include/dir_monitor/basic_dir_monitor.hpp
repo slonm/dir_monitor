@@ -68,12 +68,12 @@ public:
     {
     }
 
-    void add_directory(const std::string &dirname)
+    void add_directory(const boost::filesystem::path &dirname)
     {
         this->get_service().add_directory(this->get_implementation(), dirname);
     }
 
-    void remove_directory(const std::string &dirname)
+    void remove_directory(const boost::filesystem::path &dirname)
     {
         this->get_service().remove_directory(this->get_implementation(), dirname);
     }

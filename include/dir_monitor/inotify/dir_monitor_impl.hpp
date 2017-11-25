@@ -39,7 +39,7 @@ public:
     {
     }
 
-    void add_directory(const std::string &dirname)
+    void add_directory(const boost::filesystem::path &dirname)
     {
         int wd = inotify_add_watch(fd_, dirname.c_str(), IN_CREATE | IN_DELETE | IN_MODIFY | IN_MOVED_FROM | IN_MOVED_TO);
         if (wd == -1)
@@ -54,7 +54,7 @@ public:
         check_sub_directory(dirname, true);
     }
 
-    void remove_directory(const std::string &dirname)
+    void remove_directory(const boost::filesystem::path &dirname)
     {
         std::unique_lock<std::mutex> lock(watch_descriptors_mutex_);
         watch_descriptors_t::right_map::iterator it = watch_descriptors_.right.find(dirname);
@@ -67,7 +67,7 @@ public:
         }
     }
 
-    void check_sub_directory(const std::string &dirname, bool add_sub_directory)
+    void check_sub_directory(const boost::filesystem::path &dirname, bool add_sub_directory)
     {
         boost::filesystem::directory_iterator end;
         for (boost::filesystem::directory_iterator iter(dirname); iter != end; ++iter) {
@@ -165,7 +165,7 @@ private:
                 case IN_CREATE | IN_ISDIR:
                     {
                         type = dir_monitor_event::added;
-                        add_directory(get_dirname(iev->wd) + "/" + iev->name);
+                        add_directory(get_dirname(iev->wd)/iev->name);
                         break;
                     }
                 }
@@ -182,11 +182,11 @@ private:
         }
     }
 
-    std::string get_dirname(int wd)
+    boost::filesystem::path get_dirname(int wd)
     {
         std::unique_lock<std::mutex> lock(watch_descriptors_mutex_);
         watch_descriptors_t::left_map::iterator it = watch_descriptors_.left.find(wd);
-        return it != watch_descriptors_.left.end() ? it->second : "";
+        return it != watch_descriptors_.left.end() ? it->second : boost::filesystem::path();
     }
 
     int fd_;
@@ -199,7 +199,7 @@ private:
     std::array<char, 4096> read_buffer_;
     std::string pending_read_buffer_;
     std::mutex watch_descriptors_mutex_;
-    typedef boost::bimap<int, std::string> watch_descriptors_t;
+    typedef boost::bimap<int, boost::filesystem::path> watch_descriptors_t;
     watch_descriptors_t watch_descriptors_;
     std::mutex events_mutex_;
     std::condition_variable events_cond_;

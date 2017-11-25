@@ -32,20 +32,6 @@ namespace helper {
                 boost::throw_exception(e);
             }
         }
-
-        inline std::wstring to_utf16(const std::string& filename)
-        {
-            static std::wstring empty;
-            if (filename.empty())
-                return empty;
-
-            int size = ::MultiByteToWideChar(CP_UTF8, 0, filename.c_str(), -1, NULL, 0);
-            size = size > 0 ? size - 1 : 0;
-            std::vector<wchar_t> buffer(size);
-            helper::throw_system_error_if(::MultiByteToWideChar(CP_UTF8, 0, filename.c_str(), -1, &buffer[0], size), "boost::asio::basic_dir_monitor_service::to_utf16: MultiByteToWideChar failed");
-
-            return std::wstring(buffer.begin(), buffer.end());
-        }
 }
 
 template <typename DirMonitorImplementation = dir_monitor_impl>
@@ -55,7 +41,7 @@ class basic_dir_monitor_service
 public:
     struct completion_key
     {
-        completion_key(HANDLE h, const std::wstring &d, std::shared_ptr<DirMonitorImplementation> &i)
+        completion_key(HANDLE h, const boost::filesystem::path &d, std::shared_ptr<DirMonitorImplementation> &i)
             : handle(h),
             dirname(d),
             impl(i)
@@ -64,7 +50,7 @@ public:
         }
 
         HANDLE handle;
-        std::wstring dirname;
+        boost::filesystem::path dirname;
         std::weak_ptr<DirMonitorImplementation> impl;
         char buffer[1024];
         OVERLAPPED overlapped;
@@ -99,20 +85,19 @@ public:
         impl.reset();
     }
 
-    void add_directory(implementation_type &impl, const std::string &dirname)
+    void add_directory(implementation_type &impl, const boost::filesystem::path &dirname)
     {
-        std::wstring wdirname = helper::to_utf16(dirname);
-        if (!boost::filesystem::is_directory(wdirname))
-            throw std::invalid_argument("boost::asio::basic_dir_monitor_service::add_directory: " + dirname + " is not a valid directory entry");
+        if (!boost::filesystem::is_directory(dirname))
+            throw std::invalid_argument("boost::asio::basic_dir_monitor_service::add_directory: " + dirname.string() + " is not a valid directory entry");
 
-        HANDLE handle = CreateFileW(wdirname.c_str(), FILE_LIST_DIRECTORY, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OVERLAPPED, NULL);
+        HANDLE handle = CreateFileW(dirname.c_str(), FILE_LIST_DIRECTORY, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OVERLAPPED, NULL);
         helper::throw_system_error_if(INVALID_HANDLE_VALUE == handle, "boost::asio::basic_dir_monitor_service::add_directory: CreateFile failed");
 
         // a smart pointer is used to free allocated memory automatically in case of 
         // exceptions while handing over a completion key to the I/O completion port module,
         // the ownership has to be *released* at the end of scope so as not to free the memory
         // the OS kernel is using.
-        auto ck_holder = std::make_unique<completion_key>(handle, wdirname, impl);
+        auto ck_holder = std::make_unique<completion_key>(handle, dirname, impl);
         helper::throw_system_error_if(NULL == CreateIoCompletionPort(ck_holder->handle, iocp_, reinterpret_cast<ULONG_PTR>(ck_holder.get()), 0),
             "boost::asio::basic_dir_monitor_service::add_directory: CreateIoCompletionPort failed");
 
@@ -128,7 +113,7 @@ public:
         ck_holder.release();
     }
 
-    void remove_directory(implementation_type &impl, const std::string &dirname)
+    void remove_directory(implementation_type &impl, const boost::filesystem::path &dirname)
     {
         // Removing the directory from the implementation will automatically close the associated file handle.
         // Closing the file handle again will make GetQueuedCompletionStatus() return where the completion key
