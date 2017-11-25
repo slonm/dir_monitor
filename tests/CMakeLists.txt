@@ -16,6 +16,7 @@ set(CMAKE_VERBOSE_MAKEFILE ON)
 if (APPLE)
     find_library(COREFOUNDATION_LIB CoreFoundation)
     find_library(CORESERVICES_LIB CoreServices)
+		SET(SYSTEM_LIBRARIES ${COREFOUNDATION_LIB} ${CORESERVICES_LIB})
 endif (APPLE)
 
 if (CMAKE_COMPILER_IS_GNUCXX)
@@ -24,7 +25,11 @@ endif()
 
 if (MSVC)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /DUNICODE /D_UNICODE /D_WINDOWS /W4 /D_SCL_SECURE_NO_WARNINGS /MP /Z7")
+endif()
+
+IF (WIN32)
     add_definitions( -D_WIN32_WINNT=0x0600 ) # setting minimum supported target version to Vista
+		SET(SYSTEM_LIBRARIES ws2_32 wsock32)
 endif()
 
 set(BOOST_TEST_LINK_MODE "BOOST_TEST_DYN_LINK")
@@ -32,7 +37,7 @@ if (BOOST_TEST_STATIC_LINK)
     set(BOOST_TEST_LINK_MODE "BOOST_TEST_NO_LIB")
 endif()
 
-create_test(sync LIBS ${Boost_LIBRARIES} ${COREFOUNDATION_LIB} ${CORESERVICES_LIB})
-create_test(async LIBS ${Boost_LIBRARIES} ${COREFOUNDATION_LIB} ${CORESERVICES_LIB})
+create_test(sync LIBS ${Boost_LIBRARIES} ${SYSTEM_LIBRARIES})
+create_test(async LIBS ${Boost_LIBRARIES} ${SYSTEM_LIBRARIES})
 # TODO: this is not unit test module
 #create_test(running LIBS ${Boost_LIBRARIES} ${COREFOUNDATION_LIB} ${CORESERVICES_LIB})
