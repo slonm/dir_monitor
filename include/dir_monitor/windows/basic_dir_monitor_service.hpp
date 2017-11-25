@@ -64,7 +64,7 @@ public:
         iocp_(init_iocp()),
         run_(true),
         work_thread_(&boost::asio::basic_dir_monitor_service<DirMonitorImplementation>::work_thread, this),
-        async_monitor_work_(std::make_unique<boost::asio::io_service::work>(async_monitor_io_service_)),
+        async_monitor_work_(new boost::asio::io_service::work(async_monitor_io_service_)),
         async_monitor_thread_(boost::bind(&boost::asio::io_service::run, &async_monitor_io_service_))
     {
     }
@@ -97,7 +97,7 @@ public:
         // exceptions while handing over a completion key to the I/O completion port module,
         // the ownership has to be *released* at the end of scope so as not to free the memory
         // the OS kernel is using.
-        auto ck_holder = std::make_unique<completion_key>(handle, dirname, impl);
+        std::unique_ptr<completion_key> ck_holder(new completion_key(handle, dirname, impl));
         helper::throw_system_error_if(NULL == CreateIoCompletionPort(ck_holder->handle, iocp_, reinterpret_cast<ULONG_PTR>(ck_holder.get()), 0),
             "boost::asio::basic_dir_monitor_service::add_directory: CreateIoCompletionPort failed");
 
