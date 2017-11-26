@@ -38,7 +38,7 @@ public:
             }
             catch (...)
             {
-                boost::this_thread::yield();
+                std::this_thread::yield();
                 again = true;
             }
         } while (again);

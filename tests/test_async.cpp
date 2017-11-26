@@ -161,7 +161,7 @@ void blocked_async_call_handler_with_local_ioservice(const boost::system::error_
 BOOST_AUTO_TEST_CASE(blocked_async_call)
 {
     directory dir(TEST_DIR1);
-    boost::thread t;
+    std::thread t;
 
     {
         boost::asio::io_service local_io_service;
@@ -174,10 +174,8 @@ BOOST_AUTO_TEST_CASE(blocked_async_call)
         // run() is invoked on another thread to make async_monitor() call a blocking function.
         // When dm and io_service go out of scope they should be destroyed properly without
         // a thread being blocked.
-        t = boost::thread(boost::bind(&boost::asio::io_service::run, boost::ref(local_io_service)));
-        boost::system_time time = boost::get_system_time();
-        time += boost::posix_time::time_duration(0, 0, 1);
-        boost::thread::sleep(time);
+        t = std::thread(boost::bind(&boost::asio::io_service::run, boost::ref(local_io_service)));
+				std::this_thread::sleep_for(std::chrono::seconds(1));
     }
 
     t.join();
@@ -191,7 +189,7 @@ void unregister_directory_handler(const boost::system::error_code &ec, const boo
 BOOST_AUTO_TEST_CASE(unregister_directory)
 {
     directory dir(TEST_DIR1);
-    boost::thread t;
+    std::thread t;
 
     {
         boost::asio::dir_monitor dm(io_service);
@@ -205,10 +203,8 @@ BOOST_AUTO_TEST_CASE(unregister_directory)
         // run() is invoked on another thread to make this test case return. Without using
         // another thread run() would block as the file was created after remove_directory()
         // had been called.
-        t = boost::thread(boost::bind(&boost::asio::io_service::run, boost::ref(io_service)));
-        boost::system_time time = boost::get_system_time();
-        time += boost::posix_time::time_duration(0, 0, 1);
-        boost::thread::sleep(time);
+        t = std::thread(boost::bind(&boost::asio::io_service::run, boost::ref(io_service)));
+				std::this_thread::sleep_for(std::chrono::seconds(1));
     }
 
     t.join();
@@ -224,7 +220,7 @@ BOOST_AUTO_TEST_CASE(two_dir_monitors)
 {
     directory dir1(TEST_DIR1);
     directory dir2(TEST_DIR2);
-    boost::thread t;
+    std::thread t;
 
     {
         boost::asio::dir_monitor dm1(io_service);
@@ -240,10 +236,8 @@ BOOST_AUTO_TEST_CASE(two_dir_monitors)
         // run() is invoked on another thread to make this test case return. Without using
         // another thread run() would block as the directory the file was created in is
         // monitored by dm2 while async_monitor() was called for dm1.
-        t = boost::thread(boost::bind(&boost::asio::io_service::run, boost::ref(io_service)));
-        boost::system_time time = boost::get_system_time();
-        time += boost::posix_time::time_duration(0, 0, 1);
-        boost::thread::sleep(time);
+        t = std::thread(boost::bind(&boost::asio::io_service::run, boost::ref(io_service)));
+				std::this_thread::sleep_for(std::chrono::seconds(1));
     }
 
     t.join();

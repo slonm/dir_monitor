@@ -22,7 +22,6 @@ endif()
 set (BOOST_COMPONENTS
     system
     date_time
-    thread
     filesystem
 )
 if (BUILD_TESTING)

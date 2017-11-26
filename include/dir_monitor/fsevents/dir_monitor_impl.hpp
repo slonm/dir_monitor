@@ -18,7 +18,7 @@
 #include <boost/system/system_error.hpp>
 #include <string>
 #include <deque>
-#include <boost/thread.hpp>
+#include <thread>
 #include <CoreServices/CoreServices.h>
 
 namespace boost {
@@ -42,7 +42,7 @@ public:
 
     void add_directory(boost::filesystem::path dirname)
     {
-        boost::unique_lock<boost::mutex> lock(dirs_mutex_);
+        std::unique_lock<std::mutex> lock(dirs_mutex_);
         dirs_.insert(dirname.native());//@todo Store path in dictionary
         stop_fsevents();
         start_fsevents();
@@ -50,7 +50,7 @@ public:
 
     void remove_directory(boost::filesystem::path dirname)
     {
-        boost::unique_lock<boost::mutex> lock(dirs_mutex_);
+        std::unique_lock<std::mutex> lock(dirs_mutex_);
         dirs_.erase(dirname.native());
         stop_fsevents();
         start_fsevents();
@@ -58,14 +58,14 @@ public:
 
     void destroy()
     {
-        boost::unique_lock<boost::mutex> lock(events_mutex_);
+        std::unique_lock<std::mutex> lock(events_mutex_);
         run_ = false;
         events_cond_.notify_all();
     }
 
     dir_monitor_event popfront_event(boost::system::error_code &ec)
     {
-        boost::unique_lock<boost::mutex> lock(events_mutex_);
+        std::unique_lock<std::mutex> lock(events_mutex_);
         while (run_ && events_.empty()) {
             events_cond_.wait(lock);
         }
@@ -84,7 +84,7 @@ public:
 
     void pushback_event(dir_monitor_event ev)
     {
-        boost::unique_lock<boost::mutex> lock(events_mutex_);
+        std::unique_lock<std::mutex> lock(events_mutex_);
         if (run_)
         {
             events_.push_back(ev);
@@ -130,7 +130,7 @@ private:
         }
 
         while (!runloop_) {
-            boost::this_thread::yield();
+            std::this_thread::yield();
         }
 
         FSEventStreamScheduleWithRunLoop(fsevents_, runloop_, kCFRunLoopDefaultMode);
@@ -197,7 +197,7 @@ private:
 
         while (running())
         {
-            boost::unique_lock<boost::mutex> lock(runloop_mutex_);
+            std::unique_lock<std::mutex> lock(runloop_mutex_);
             runloop_cond_.wait(lock);
             CFRunLoopRun();
         }
@@ -205,14 +205,14 @@ private:
 
     bool running()
     {
-        boost::unique_lock<boost::mutex> lock(work_thread_mutex_);
+        std::unique_lock<std::mutex> lock(work_thread_mutex_);
         return run_;
     }
 
     void stop_work_thread()
     {
         // Access to run_ is sychronized with running().
-        boost::mutex::scoped_lock lock(work_thread_mutex_);
+        std::unique_lock<std::mutex> lock(work_thread_mutex_);
         run_ = false;
         CFRunLoopStop(runloop_); // exits the thread
         runloop_cond_.notify_all();
@@ -220,19 +220,19 @@ private:
 
     bool run_;
     CFRunLoopRef runloop_;
-    boost::mutex runloop_mutex_;
-    boost::condition_variable runloop_cond_;
+    std::mutex runloop_mutex_;
+    std::condition_variable runloop_cond_;
 
-    boost::mutex work_thread_mutex_;
-    boost::thread work_thread_;
+    std::mutex work_thread_mutex_;
+    std::thread work_thread_;
 
     FSEventStreamRef fsevents_;
 
-    boost::mutex dirs_mutex_;
+    std::mutex dirs_mutex_;
     boost::unordered_set<std::string> dirs_;
 
-    boost::mutex events_mutex_;
-    boost::condition_variable events_cond_;
+    std::mutex events_mutex_;
+    std::condition_variable events_cond_;
     std::deque<dir_monitor_event> events_;
 };
 

@@ -42,10 +42,11 @@
 #include <deque>
 
 #include <boost/asio.hpp>
-#include <boost/thread.hpp>
 #include <boost/bind.hpp>
-#include <boost/scoped_ptr.hpp>
 #include <boost/array.hpp>
+#include <thread>
+#include <mutex>
+#include <condition_variable>
 #include <fcntl.h>
 #include <unistd.h>
 #include <errno.h>
@@ -94,27 +95,27 @@ public:
 
     void add_directory(boost::filesystem::path dirname, int wd)
     {
-        boost::unique_lock<boost::mutex> lock(dirs_mutex_);
+        std::unique_lock<std::mutex> lock(dirs_mutex_);
         dirs_.insert(dirname, new unix_handle(wd));
         scan(dirname, entries[dirname]);
     }
 
     void remove_directory(const boost::filesystem::path &dirname)
     {
-        boost::unique_lock<boost::mutex> lock(dirs_mutex_);
+        std::unique_lock<std::mutex> lock(dirs_mutex_);
         dirs_.erase(dirname);
     }
 
     void destroy()
     {
-        boost::unique_lock<boost::mutex> lock(events_mutex_);
+        std::unique_lock<std::mutex> lock(events_mutex_);
         run_ = false;
         events_cond_.notify_all();
     }
 
     dir_monitor_event popfront_event(boost::system::error_code &ec)
     {
-        boost::unique_lock<boost::mutex> lock(events_mutex_);
+        std::unique_lock<std::mutex> lock(events_mutex_);
         while (run_ && events_.empty()) {
             events_cond_.wait(lock);
         }
@@ -132,7 +133,7 @@ public:
 
     void pushback_event(dir_monitor_event ev)
     {
-        boost::unique_lock<boost::mutex> lock(events_mutex_);
+        std::unique_lock<std::mutex> lock(events_mutex_);
         if (run_)
         {
             events_.push_back(ev);
@@ -249,28 +250,28 @@ private:
     bool running()
     {
         // Access to run_ is sychronized with stop_work_thread().
-        boost::mutex::scoped_lock lock(work_thread_mutex_);
+        std::unique_lock<std::mutex> lock(work_thread_mutex_);
         return run_;
     }
 
     void stop_work_thread()
     {
         // Access to run_ is sychronized with running().
-        boost::mutex::scoped_lock lock(work_thread_mutex_);
+        std::unique_lock<std::mutex> lock(work_thread_mutex_);
         run_ = false;
     }
 
     int kqueue_;
     boost::unordered_map<boost::filesystem::path, dir_entry_map> entries;
     bool run_;
-    boost::mutex work_thread_mutex_;
-    boost::thread work_thread_;
+    std::mutex work_thread_mutex_;
+    std::thread work_thread_;
 
-    boost::mutex dirs_mutex_;
+    std::mutex dirs_mutex_;
     boost::ptr_unordered_map<boost::filesystem::path, unix_handle> dirs_;
 
-    boost::mutex events_mutex_;
-    boost::condition_variable events_cond_;
+    std::mutex events_mutex_;
+    std::condition_variable events_cond_;
     std::deque<dir_monitor_event> events_;
 };
 
