@@ -43,7 +43,7 @@ public:
     void add_directory(boost::filesystem::path dirname)
     {
         std::unique_lock<std::mutex> lock(dirs_mutex_);
-        dirs_.insert(dirname.native());//@todo Store path in dictionary
+        dirs_.insert(dirname);
         stop_fsevents();
         start_fsevents();
     }
@@ -51,7 +51,7 @@ public:
     void remove_directory(boost::filesystem::path dirname)
     {
         std::unique_lock<std::mutex> lock(dirs_mutex_);
-        dirs_.erase(dirname.native());
+        dirs_.erase(dirname);
         stop_fsevents();
         start_fsevents();
     }
@@ -93,7 +93,7 @@ public:
     }
 
 private:
-    CFArrayRef make_array(boost::unordered_set<std::string> in)
+    CFArrayRef make_array(boost::unordered_set<boost::filesystem::path> in)
     {
         CFMutableArrayRef arr = CFArrayCreateMutable(kCFAllocatorDefault, in.size(), &kCFTypeArrayCallBacks);
         for (auto str : in) {
@@ -229,7 +229,7 @@ private:
     FSEventStreamRef fsevents_;
 
     std::mutex dirs_mutex_;
-    boost::unordered_set<std::string> dirs_;
+    boost::unordered_set<boost::filesystem::path> dirs_;
 
     std::mutex events_mutex_;
     std::condition_variable events_cond_;
