@@ -73,7 +73,7 @@ public:
 
     void construct(implementation_type &impl)
     {
-        impl = std::make_shared<DirMonitorImplementation>();
+        impl.reset(new DirMonitorImplementation);
     }
 
     void destroy(implementation_type &impl)
