@@ -1,4 +1,4 @@
-﻿#pragma once
+ #pragma once
 
 #include <boost/filesystem/path.hpp>
 #include <boost/algorithm/string/split.hpp>
